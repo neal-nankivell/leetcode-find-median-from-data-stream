@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Answer
 {
@@ -24,27 +22,45 @@ namespace Answer
      */
     public class MedianFinder
     {
-        private readonly List<int> _nums = new List<int>();
+        private readonly MinHeap _minheap = new MinHeap();
+        private readonly MaxHeap _maxheap = new MaxHeap();
 
         public void AddNum(int num)
         {
-            _nums.Add(num);
+            if (_minheap.Count == 0)
+            {
+                _minheap.Add(num);
+                return;
+            }
+            if (num > FindMedian())
+            {
+                _minheap.Add(num);
+                if (_minheap.Count > (_maxheap.Count + 1))
+                {
+                    _maxheap.Add(_minheap.PopMin());
+                }
+            }
+            else
+            {
+                _maxheap.Add(num);
+                if (_maxheap.Count > (_minheap.Count + 1))
+                {
+                    _minheap.Add(_maxheap.PopMax());
+                }
+            }
         }
 
         public double FindMedian()
         {
-            _nums.Sort();
-
-            if (_nums.Count % 2 == 0)
+            if (_minheap.Count > _maxheap.Count)
             {
-                var a = _nums[((_nums.Count - 1) / 2)];
-                var b = _nums[((_nums.Count - 1) / 2) + 1];
-                return (double)(a + b) / 2;
+                return _minheap.GetMin();
             }
-            else
+            else if (_minheap.Count < _maxheap.Count)
             {
-                return _nums[(_nums.Count - 1) / 2];
+                return _maxheap.GetMax();
             }
+            return (double)(_minheap.GetMin() + _maxheap.GetMax()) / 2;
         }
     }
 
@@ -54,4 +70,192 @@ namespace Answer
      * obj.AddNum(num);
      * double param_2 = obj.FindMedian();
      */
+
+    public class MinHeap
+    {
+        private List<int> _heap = new List<int>();
+
+        public void Add(int num)
+        {
+            var index = _heap.Count;
+            _heap.Add(num);
+
+            int? parentIndex = GetParentIndex(index);
+
+            while (parentIndex.HasValue && num < _heap[parentIndex.Value])
+            {
+                Swap(index, parentIndex.Value);
+                index = parentIndex.Value;
+                parentIndex = GetParentIndex(index);
+            }
+        }
+
+        public int GetMin() => _heap[0];
+
+        public int Count => _heap.Count;
+
+        public int PopMin()
+        {
+            var min = GetMin();
+            if (_heap.Count == 1)
+            {
+                _heap.Clear();
+                return min;
+            }
+            Swap(0, _heap.Count - 1);
+            _heap.RemoveAt(_heap.Count - 1);
+
+            var index = 0;
+            var valueToBubbleDown = _heap[0];
+
+            (int leftChildIndex, int rightChildIndex) GetChildIndexes(int i) =>
+                (i * 2 + 1, i * 2 + 2);
+
+            (int? leftChildValue, int? rightChildValue) GetChildren(int i)
+            {
+                (var leftChildIndex, var rightChildIndex) = GetChildIndexes(i);
+                return (
+                    leftChildIndex < _heap.Count ? _heap[leftChildIndex] : (int?)null,
+                    rightChildIndex < _heap.Count ? _heap[rightChildIndex] : (int?)null
+                );
+            };
+
+            (int aIndex, int bIndex) = GetChildIndexes(index);
+            (int? a, int? b) = GetChildren(index);
+
+            while ((a.HasValue && a.Value < valueToBubbleDown) ||
+                (b.HasValue && b.Value < valueToBubbleDown))
+            {
+                if (b.HasValue && b.Value < a.Value)
+                {
+                    Swap(index, bIndex);
+                    index = bIndex;
+                }
+                else
+                {
+                    Swap(index, aIndex);
+                    index = aIndex;
+                }
+                var indexes = GetChildIndexes(index);
+                var values = GetChildren(index);
+                a = values.leftChildValue;
+                b = values.rightChildValue;
+                aIndex = indexes.leftChildIndex;
+                bIndex = indexes.rightChildIndex;
+            }
+
+            return min;
+        }
+
+        private void Swap(int indexA, int indexB)
+        {
+            var a = _heap[indexA];
+            var b = _heap[indexB];
+            _heap[indexA] = b;
+            _heap[indexB] = a;
+        }
+
+        private int? GetParentIndex(int index)
+        {
+            if (index == 0)
+            {
+                return null;
+            }
+            return (index - 1) / 2;
+        }
+    }
+
+    public class MaxHeap
+    {
+        private List<int> _heap = new List<int>();
+
+        public void Add(int num)
+        {
+            var index = _heap.Count;
+            _heap.Add(num);
+
+            int? parentIndex = GetParentIndex(index);
+
+            while (parentIndex.HasValue && num > _heap[parentIndex.Value])
+            {
+                Swap(index, parentIndex.Value);
+                index = parentIndex.Value;
+                parentIndex = GetParentIndex(index);
+            }
+        }
+
+        public int GetMax() => _heap[0];
+
+        public int Count => _heap.Count;
+
+        public int PopMax()
+        {
+            var max = GetMax();
+            if (_heap.Count == 1)
+            {
+                _heap.Clear();
+                return max;
+            }
+            Swap(0, _heap.Count - 1);
+            _heap.RemoveAt(_heap.Count - 1);
+
+            var index = 0;
+            var valueToBubbleDown = _heap[0];
+
+            (int leftChildIndex, int rightChildIndex) GetChildIndexes(int i) =>
+                (i * 2 + 1, i * 2 + 2);
+
+            (int? leftChildValue, int? rightChildValue) GetChildren(int i)
+            {
+                (var leftChildIndex, var rightChildIndex) = GetChildIndexes(i);
+                return (
+                    leftChildIndex < _heap.Count ? _heap[leftChildIndex] : (int?)null,
+                    rightChildIndex < _heap.Count ? _heap[rightChildIndex] : (int?)null
+                );
+            };
+
+            (int aIndex, int bIndex) = GetChildIndexes(index);
+            (int? a, int? b) = GetChildren(index);
+
+            while ((a.HasValue && a.Value > valueToBubbleDown) ||
+                (b.HasValue && b.Value > valueToBubbleDown))
+            {
+                if (b.HasValue && b.Value > a.Value)
+                {
+                    Swap(index, bIndex);
+                    index = bIndex;
+                }
+                else
+                {
+                    Swap(index, aIndex);
+                    index = aIndex;
+                }
+                var indexes = GetChildIndexes(index);
+                var values = GetChildren(index);
+                a = values.leftChildValue;
+                b = values.rightChildValue;
+                aIndex = indexes.leftChildIndex;
+                bIndex = indexes.rightChildIndex;
+            }
+
+            return max;
+        }
+
+        private void Swap(int indexA, int indexB)
+        {
+            var a = _heap[indexA];
+            var b = _heap[indexB];
+            _heap[indexA] = b;
+            _heap[indexB] = a;
+        }
+
+        private int? GetParentIndex(int index)
+        {
+            if (index == 0)
+            {
+                return null;
+            }
+            return (index - 1) / 2;
+        }
+    }
 }
