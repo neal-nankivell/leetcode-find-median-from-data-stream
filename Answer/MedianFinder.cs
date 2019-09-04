@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Answer
 {
@@ -22,20 +24,27 @@ namespace Answer
      */
     public class MedianFinder
     {
-
-        public MedianFinder()
-        {
-
-        }
+        private readonly List<int> _nums = new List<int>();
 
         public void AddNum(int num)
         {
-
+            _nums.Add(num);
         }
 
         public double FindMedian()
         {
-            throw new NotImplementedException();
+            _nums.Sort();
+
+            if (_nums.Count % 2 == 0)
+            {
+                var a = _nums[((_nums.Count - 1) / 2)];
+                var b = _nums[((_nums.Count - 1) / 2) + 1];
+                return (double)(a + b) / 2;
+            }
+            else
+            {
+                return _nums[(_nums.Count - 1) / 2];
+            }
         }
     }
 
